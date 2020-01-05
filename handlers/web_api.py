@@ -26,6 +26,11 @@ class WebAPI:
         return index
 
     async def rest_api(self, request):
+        """
+        Function to handle rest api calls
+        :param request: json data with rest request
+        :return: json response
+        """
         data = dict(await request.json())
         index = data.pop('index')
         options = dict(
@@ -47,26 +52,38 @@ class WebAPI:
 
     @template('columns.html')
     async def edit(self, request):
+        """
+        Function to edit report
+        :param request: The title of the report information
+        :return: dictionary of report data
+        """
         report_needed = await self.dao.get('reports', dict(title=request.match_info.get('file')))
         sentences = await self.data_svc.build_sentences(report_needed[0]['uid'])
         attack_uids = await self.dao.get('attack_uids')
-        return dict(file=request.match_info.get('file'), sentences=sentences, attack_uids=attack_uids)
+        original_html = await self.dao.get('original_html', dict(report_uid=report_needed[0]['uid']))
+        final_html = await self.web_svc.build_final_html(original_html, sentences)
+        return dict(file=request.match_info.get('file'), sentences=sentences, attack_uids=attack_uids, original_html=original_html, final_html=final_html)
 
     async def pdf_export(self, request):
+        """
+        Function to export report in PDF format
+        :param request: The title of the report information
+        :return: response status of function
+        """
         report_needed = await self.dao.get('reports', dict(title=request.match_info.get('file')))
         sentences_id = report_needed[0]['uid']
         sentences = await self.data_svc.build_sentences(report_needed[0]['uid'])
         attack_uids = await self.dao.get('attack_uids')
         # hits = await self.dao.get('report_sentence_hits', dict(report_uid=sentences_id))
 
-        dd            = dict()
+        dd = dict()
         dd['content'] = []
-        dd['styles']  = dict()
+        dd['styles'] = dict()
 
         # Document MetaData Info
         # See https://pdfmake.github.io/docs/document-definition-object/document-medatadata/
-        dd['info']            = dict()
-        dd['info']['title']   = report_needed[0]['title']
+        dd['info'] = dict()
+        dd['info']['title'] = report_needed[0]['title']
         dd['info']['creator'] = report_needed[0]['url']
 
         table = {"body": []}
@@ -85,12 +102,16 @@ class WebAPI:
                     for match in matching_attacks:
                         table["body"].append([match["tid"], match["name"], sentence['text']])
 
-        # Append table to the end     
+        # Append table to the end
         dd['content'].append({"table": table})
         return web.json_response(dd)
 
     async def rebuild_ml(self, request):
-        """This is a new api funciton to force a rebuild of the ML models. This is intended to be kicked off in the background at some point"""
+        """
+        This is a new api function to force a rebuild of the ML models. This is intended to be kicked off in the background at some point
+        :param request: uh, nothing?
+        :return: status of rebuild
+        """
         # get techniques from database
         tech_data = await self.dao.get('attack_uids')
         techniques = {}

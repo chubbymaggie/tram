@@ -8,6 +8,14 @@
         padding-top: 10px;
     }
 
+    .normalImage {
+        display: block;
+        max-height: 700px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 75%;
+    }
+
 	a:hover {
   	background-color: #ffffbd;
 	}
@@ -19,18 +27,20 @@
 
 <div class="row justify-content-center pb-3">
     <div class="col-md-auto">
-        <button onclick="$.getJSON('/export/{{file}}', (x) => {pdfMake.createPdf(x).download();})" class="btn btn-md btn-outline-secondary">Export PDF</button>
+        <button onclick="$.getJSON('/export/{{file}}', (x) => {pdfMake.createPdf(x).download(x['info']['title']);})" class="btn btn-md btn-outline-secondary">Export PDF</button>
     </div>
 </div>
 
 <div class="row">
     <div class="col reportSentencesDiv">
-        {% for sentence in sentences %}
-        {% if sentence.found_status == 'true' %}
-                <a class="bg-warning" id="sentence{{sentence.uid}}" onclick="sentenceContext({{sentence.uid}})">{{ sentence.text }}</a>
-        {% else %}
-        <a id="sentence{{sentence.uid}}" onclick="sentenceContext({{sentence.uid}})">{{ sentence.text }}</a>
-        {% endif %}
+        {% for elmt in final_html %}
+            {% if elmt.tag == 'img' %}
+                <img src="{{elmt.text}}" class="normalImage">
+            {% elif elmt.found_status == 'true' %}
+                <a class="bg-warning" id="elmt{{elmt.uid}}" onclick="sentenceContext({{elmt.uid}})">{{elmt.text}}</a>
+            {% else %}
+                <a id="elmt{{elmt.uid}}" onclick="sentenceContext({{elmt.uid}})">{{elmt.text}}</a>
+            {% endif %}
         <br><br>
         {% endfor %}
     </div>
